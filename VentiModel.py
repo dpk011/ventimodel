@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
 
-class Lung():
+class VentiModel():
 
     def __init__(self): ##, Vtp, BPM, IE, Ptrig):
 
@@ -31,21 +31,22 @@ class Lung():
         self.Rp = 100*self.R     # Leak Resistance; cm_H2O / (L/s)
 
         ## Calculating timing and defining state
-        self.T, self.Tin, self.Tex = self.RespTime()
-        self.Tho = self.Tin * self.Thp/100          # Inspiratory hold or pause (in sec)
-
+        self.T, self.Tin, self.Tho, self.Tex = self.RespTime()
+        self.Vt = self.VCon * self.Vtp
+        
         self.dt = 0.01      # in sec ;time resolution
         self.state = pd.DataFrame(index=np.arange(0, self.T + self.dt, self.dt), columns = ['Faw', 'Paw', 'Plung', 'Vt'])
 
     def RespTime(self):
         T = 60/self.BPM                  # Breath duration in sec
         Tinh = (T/(1+self.IE))           # InhaleHold time of the inspiratory phase (in sec)
-        Tin = Tinh*(100- self.Thp)/100   # Inhale time of the inspiratory phase (in sec)
+        Tho = Tinh * self.Thp/100        # Inspiratory hold or pause (in sec)
+        Tin = Tinh - Tho                 # Inhale time of the inspiratory phase (in sec)
         Tex = T - Tinh                   # expiratory phase duration (in sec)
-        return(T, Tin, Tex)
+        return(T, Tin, Tho, Tex)
 
     def Flowin_constant(self): #, flow=0.55): # flow in Liters/sec
-        flow = self.VCon * self.Vtp/(self.Tin)  # Or divide by (self.Tin - self.Tho)
+        flow = self.Vt/(self.Tin)  # Or divide by (self.Tin - self.Tho)
         self.state.loc[0:self.Tin, 'Faw'] = flow
 
     def Inspiration(self):
@@ -89,21 +90,21 @@ class Lung():
 if __name__ == "__main__":
     print('==> Direct Script Execution...')
 
-lung = Lung()
+# lung = VentiModel()
 
-# lung.Flowin_constant()
-# lung.Inspiration()
-# lung.Hold()
-df = lung.Breath(4)
+# # lung.Flowin_constant()
+# # lung.Inspiration()
+# # lung.Hold()
+# df = lung.Breath(4)
 
-fig, ax = plt.subplots(3,1, figsize=(6,6), sharex=True)
-df['Paw'].plot(ax=ax[2])
-df['Vt'].plot(ax=ax[1])
-df['Faw'].plot(ax=ax[0])
-ax[0].grid();ax[1].grid();ax[2].grid()
+# fig, ax = plt.subplots(3,1, figsize=(6,6), sharex=True)
+# df['Paw'].plot(ax=ax[2])
+# df['Vt'].plot(ax=ax[1])
+# df['Faw'].plot(ax=ax[0])
+# ax[0].grid();ax[1].grid();ax[2].grid()
 
-ax[0].set_title('Flow (L/s)')
-ax[1].set_title('Delivered Tidal Volume (L)')
-ax[2].set_title('Airway Pressure (cm_H2O)')
-ax[2].set_xlabel('Time (s)')
-plt.show()
+# ax[0].set_title('Flow (L/s)')
+# ax[1].set_title('Delivered Tidal Volume (L)')
+# ax[2].set_title('Airway Pressure (cm_H2O)')
+# ax[2].set_xlabel('Time (s)')
+# plt.show()
